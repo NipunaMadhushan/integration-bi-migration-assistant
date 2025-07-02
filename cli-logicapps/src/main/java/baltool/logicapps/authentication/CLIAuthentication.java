@@ -188,7 +188,7 @@ public class CLIAuthentication {
 
         if (response.statusCode() == 200) {
             String responseBody = response.body();
-            outStream.println("Authentication successful!");
+            outStream.println("Authentication successful");
 
             // Parse the response to extract tokens
             String accessToken = extractTokenFromResponse(responseBody, "access_token");

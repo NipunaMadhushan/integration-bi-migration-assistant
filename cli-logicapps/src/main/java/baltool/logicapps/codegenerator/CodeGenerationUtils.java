@@ -63,31 +63,60 @@ import static baltool.logicapps.Constants.TRIPLE_BACKTICK_BALLERINA;
  */
 public class CodeGenerationUtils {
     private static final PrintStream errStream = System.err;
+    private static final PrintStream outStream = System.out;
     private static final String TEMP_DIR_PREFIX = "logicapps-migration-tool-codegen-diagnostics-dir-";
 
-    public static JsonArray generateCodeForLogicApp(String copilotAccessToken, Path logicAppFilePath, Path projectPath,
+    public static JsonArray generateCodeForLogicApp(String copilotAccessToken, Path logicAppFilePath,
                                                     String packageName, String additionalInstructions,
-                                                    ModuleDescriptor moduleDescriptor) {
+                                                    ModuleDescriptor moduleDescriptor, boolean verbose) {
         try {
             String logicAppContent = Files.readString(logicAppFilePath, StandardCharsets.UTF_8);
             JsonArray fileAttachmentContents = getFileAttachmentContents(logicAppFilePath.getFileName().toString(),
                     logicAppContent);
             JsonArray sourceFiles = createSourceFilesArray();
-            String executionPlan = CodeGenerationUtils.generateLogicAppExecutionPlan(COPILOT_BACKEND_URL,
-                    copilotAccessToken, getHttpClient(), sourceFiles, fileAttachmentContents, packageName,
-                    additionalInstructions);
-            String generatedPrompt = constructMigrateUserPrompt(additionalInstructions, executionPlan);
 
-            // Generate code
-            GeneratedCode generatedCode = generateCode(COPILOT_BACKEND_URL, copilotAccessToken, getHttpClient(),
-                    sourceFiles, fileAttachmentContents, packageName, generatedPrompt);
-            updateSourceFilesWithGeneratedContent(sourceFiles, generatedCode.codeMap);
+            outStream.println("Start generating code for Logic App: " + logicAppFilePath.getFileName());
 
-            // Repair code
-            GeneratedCode repairedCode = repairCode(COPILOT_BACKEND_URL, copilotAccessToken, getHttpClient(),
-                    sourceFiles, fileAttachmentContents, packageName, generatedPrompt, moduleDescriptor,
-                    generatedCode);
-            updateSourceFilesWithGeneratedContent(sourceFiles, repairedCode.codeMap);
+            BuildProject project = createProject(sourceFiles, moduleDescriptor);
+
+//            // Step 1: Generate execution plan
+//            showProgress(1, 3, "Generating execution plan");
+//            String executionPlan = CodeGenerationUtils.generateLogicAppExecutionPlan(COPILOT_BACKEND_URL,
+//                    copilotAccessToken, getHttpClient(), sourceFiles, fileAttachmentContents, packageName,
+//                    additionalInstructions);
+//            String generatedPrompt = constructMigrateUserPrompt(additionalInstructions, executionPlan);
+//            showStepCompleted(1, 3, "Execution plan generated");
+//
+//            // Step 2: Generate code
+//            showProgress(2, 3, "Generating code");
+//            GeneratedCode generatedCode = generateCode(COPILOT_BACKEND_URL, copilotAccessToken, getHttpClient(),
+//                    sourceFiles, fileAttachmentContents, packageName, generatedPrompt);
+//            updateSourceFilesWithGeneratedContent(sourceFiles, generatedCode.codeMap);
+//            showStepCompleted(2, 3, "Code generation completed");
+
+//            // Testing
+//            Path generatedCodeFilePath = Path.of("/Users/nipunal/wso2/logicapps-migration-tool/code_response.txt");
+//            String generatedCodeResponseBody = Files.readString(generatedCodeFilePath, StandardCharsets.UTF_8);
+//            Map<String, String> generatedCodeMapCodeContent =
+//                extractGeneratedCodeFromResponse(generatedCodeResponseBody);
+//            Path generatedFunctionsFilePath = Path.of("/Users/nipunal/wso2/logicapps-migration-tool/" +
+//                    "generated_functions.txt");
+//            String generatedFunctionsContent = Files.readString(generatedFunctionsFilePath, StandardCharsets.UTF_8);
+//            JsonArray generatedFunctions = JsonParser.parseString(generatedFunctionsContent).getAsJsonArray();
+//            Path generatedPromptFilepath = Path.of("/Users/nipunal/wso2/logicapps-migration-tool/" +
+//                    "generated_prompt.txt");
+//            String generatedPrompt = Files.readString(generatedPromptFilepath, StandardCharsets.UTF_8);
+//            GeneratedCode generatedCode = new GeneratedCode(generatedCodeMapCodeContent, generatedFunctions);
+//
+//            // Step 3: Repair code
+//            showProgress(3, 3, "Repairing and optimizing code");
+//            GeneratedCode repairedCode = repairCode(COPILOT_BACKEND_URL, copilotAccessToken, getHttpClient(),
+//                    sourceFiles, fileAttachmentContents, packageName, generatedPrompt, moduleDescriptor,
+//                    generatedCode);
+//            updateSourceFilesWithGeneratedContent(sourceFiles, repairedCode.codeMap);
+//            showStepCompleted(3, 3, "Code repair completed");
+//
+            outStream.println("\nBallerina Integration generated successfully!");
 
             return sourceFiles;
 
@@ -244,12 +273,9 @@ public class CodeGenerationUtils {
 
     private static BuildProject createProject(JsonArray sourceFiles, ModuleDescriptor moduleDescriptor)
             throws IOException {
+//        Path tempProjectDir = Path.of("/Users/nipunal/Desktop/observability/tutorial/hello-world-service");
         Path tempProjectDir = Files.createTempDirectory(TEMP_DIR_PREFIX + System.currentTimeMillis());
-        tempProjectDir.toFile().deleteOnExit();
-
-        Path tempGeneratedDir = Files.createDirectory(tempProjectDir.resolve("generated"));
-        tempGeneratedDir.toFile().deleteOnExit();
-
+//        tempProjectDir.toFile().deleteOnExit();
         for (JsonElement sourceFile : sourceFiles) {
             JsonObject sourceFileObj = sourceFile.getAsJsonObject();
             File file = Files.createFile(
@@ -258,13 +284,13 @@ public class CodeGenerationUtils {
 
             try (FileWriter fileWriter = new FileWriter(file, StandardCharsets.UTF_8)) {
                 fileWriter.write(sourceFileObj.get(CONTENT).getAsString());
+                fileWriter.write("\n");
             }
         }
 
         Path ballerinaTomlPath = tempProjectDir.resolve(BALLERINA_TOML_FILE);
         File balTomlFile = Files.createFile(ballerinaTomlPath).toFile();
-        balTomlFile.deleteOnExit();
-
+//        balTomlFile.deleteOnExit();
         try (FileWriter fileWriter = new FileWriter(balTomlFile, StandardCharsets.UTF_8)) {
             fileWriter.write(String.format("""
                 [package]
@@ -278,10 +304,17 @@ public class CodeGenerationUtils {
         }
 
         Path ballerinaHomePath = Path.of(Objects.requireNonNull(getBallerinaHome()));
-        Environment environment = EnvironmentBuilder.getBuilder().setBallerinaHome(ballerinaHomePath).build();
-        ProjectEnvironmentBuilder projectEnvironmentBuilder = ProjectEnvironmentBuilder.getBuilder(environment);
-        BuildOptions buildOptions = BuildOptions.builder().targetDir(ProjectUtils.getTemporaryTargetPath()).build();
-        return BuildProject.load(projectEnvironmentBuilder, tempProjectDir, buildOptions);
+        outStream.println("Temporary project directory created at: " + tempProjectDir.toAbsolutePath());
+        outStream.println("Using Ballerina home: " + ballerinaHomePath);
+
+//        Environment environment = EnvironmentBuilder.getBuilder().setBallerinaHome(ballerinaHomePath).build();
+//        ProjectEnvironmentBuilder projectEnvironmentBuilder = ProjectEnvironmentBuilder.getBuilder(environment);
+//        BuildOptions buildOptions = BuildOptions.builder().targetDir(ProjectUtils.getTemporaryTargetPath()).
+//                setSkipTests(true).build();
+//        return BuildProject.load(tempProjectDir, buildOptions);
+//        System.setProperty("ballerina.home", ballerinaHomePath.toString());
+//        BuildOptions buildOptions = BuildOptions.builder().targetDir(ProjectUtils.getTemporaryTargetPath()).build();
+        return BuildProject.load(tempProjectDir);
     }
 
     private static Map<String, String> extractGeneratedCodeFromResponse(String generatedResponseBody) {
@@ -551,5 +584,35 @@ public class CodeGenerationUtils {
         }
 
         return null;
+    }
+
+    // Helper method to show progress
+    private static void showProgress(int currentStep, int totalSteps, String message) {
+        String progressBar = createProgressBar(currentStep - 1, totalSteps); // currentStep - 1 because we're starting the step
+        outStream.printf("[%d/%d] %s %s\n", currentStep, totalSteps, progressBar, message);
+    }
+
+    // Helper method to show step completion
+    private static void showStepCompleted(int currentStep, int totalSteps, String message) {
+        String progressBar = createProgressBar(currentStep, totalSteps);
+        outStream.printf("[%d/%d] %s %s ✓\n", currentStep, totalSteps, progressBar, message);
+    }
+
+    // Helper method to create visual progress bar
+    private static String createProgressBar(int completed, int total) {
+        int barLength = 20; // Length of the progress bar
+        int filledLength = (int) ((double) completed / total * barLength);
+
+        StringBuilder bar = new StringBuilder("[");
+        for (int i = 0; i < barLength; i++) {
+            if (i < filledLength) {
+                bar.append("█");
+            } else {
+                bar.append("░");
+            }
+        }
+        bar.append("]");
+
+        return bar.toString();
     }
 }

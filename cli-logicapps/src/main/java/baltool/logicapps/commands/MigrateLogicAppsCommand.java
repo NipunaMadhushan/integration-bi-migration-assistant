@@ -40,7 +40,7 @@ public class MigrateLogicAppsCommand implements BLauncherCmd {
 
     private final PrintStream errStream;
     private static final String USAGE = "bal migrate-logicapps <source-logicapp-file> " +
-            "[-a|--add-on <additional-instructions>] [-o|--out <output-directory>] [-n|--name <project-name>]";
+            "[-v|--verbose] [-a|--add-on <additional-instructions>] [-o|--out <output-directory>]";
 
     public MigrateLogicAppsCommand() {
         errStream = System.err;
@@ -50,15 +50,11 @@ public class MigrateLogicAppsCommand implements BLauncherCmd {
             arity = "0..1")
     private String sourcePath;
 
-    @CommandLine.Option(names = { "--add-on", "-a" },
-            description = "Additional instructions for the migration process")
-    private String additionalInstructions;
+    @CommandLine.Option(names = {"--verbose", "-v"}, description = "Enable verbose output", defaultValue = "false")
+    private boolean verbose;
 
     @CommandLine.Option(names = { "--out", "-o" }, description = "Output directory path")
     private String outputPath;
-
-    @CommandLine.Option(names = { "--name", "-n" }, description = "Project name for the generated Ballerina project")
-    private String projectName;
 
     @Override
     public void execute() {
@@ -66,19 +62,16 @@ public class MigrateLogicAppsCommand implements BLauncherCmd {
             errStream.println("Error: LogicApp json file path is required.");
             onInvalidInput();
         }
-        if (additionalInstructions == null) {
-            additionalInstructions = "";
-        }
+
+        // Temporary disable the additional instructions feature
+        String additionalInstructions = "";
 
         Path logicAppFilePath = Path.of(sourcePath);
-        if (outputPath != null && projectName != null) {
+        if (outputPath != null) {
             LogicAppsMigrationExecutor.migrateLogicAppToBallerina(logicAppFilePath, additionalInstructions,
-                    Path.of(outputPath), projectName);
-        } else if (outputPath != null) {
-            LogicAppsMigrationExecutor.migrateLogicAppToBallerina(logicAppFilePath, additionalInstructions,
-                    Path.of(outputPath));
+                    Path.of(outputPath), verbose);
         } else {
-            LogicAppsMigrationExecutor.migrateLogicAppToBallerina(logicAppFilePath, additionalInstructions);
+            LogicAppsMigrationExecutor.migrateLogicAppToBallerina(logicAppFilePath, additionalInstructions, verbose);
         }
     }
 

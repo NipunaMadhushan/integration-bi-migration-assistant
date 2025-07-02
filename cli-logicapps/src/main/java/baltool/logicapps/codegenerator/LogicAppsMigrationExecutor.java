@@ -30,49 +30,18 @@ import static baltool.logicapps.Constants.FILE_PATH;
 
 public class LogicAppsMigrationExecutor {
     private static final PrintStream errStream = System.err;
+    private static final PrintStream outStream = System.out;
 
     // Testing
     public static void main(String[] args) {
         // Arguments
         Path logicAppFilePath = Paths.get("/Users/nipunal/wso2/logic-apps", "ChckinV5ExpndTimeChiledWF.json");
         String additionalInstructions = "";
-        Path projectRootDir = Paths.get("/Users/nipunal/wso2/logic-apps");
-        String projectName = "mt-logic-apps-sample-1";
+        Path projectRootDir = Paths.get("/Users/nipunal/wso2/logic-apps/logicapps-migration-sample-1");
+        boolean verbose = true;
 
         LogicAppsMigrationExecutor.migrateLogicAppToBallerina(logicAppFilePath, additionalInstructions, projectRootDir,
-                projectName);
-    }
-
-    /**
-     * Migrates a Logic App JSON file to a Ballerina project.
-     *
-     * @param logicAppFilePath        the path to the Logic App JSON file.
-     * @param additionalInstructions  additional instructions for the migration process.
-     * @param projectRootDir          the root directory of the project.
-     * @param projectName             the name of the project.
-     */
-    public static void migrateLogicAppToBallerina(Path logicAppFilePath, String additionalInstructions,
-                                                  Path projectRootDir, String projectName) {
-        try {
-            String copilotAccessToken = getAccessToken();
-            if (copilotAccessToken == null) {
-                return;
-            }
-
-            Path projectPath = projectRootDir.resolve(projectName);
-            String packageName = URLEncoder.encode(projectName, StandardCharsets.UTF_8).replace("-", "_");
-            ModuleDescriptor moduleDescriptor = getModuleDescriptor(packageName);
-
-            JsonArray generatedSourceFiles = CodeGenerationUtils.generateCodeForLogicApp(copilotAccessToken,
-                    logicAppFilePath, projectPath, packageName, additionalInstructions, moduleDescriptor);
-
-            if (!generatedSourceFiles.isEmpty()) {
-                createProjectFromGeneratedSource(generatedSourceFiles, moduleDescriptor, projectPath);
-            }
-
-        } catch (IOException e) {
-            errStream.println("Error reading project source files: " + e.getMessage());
-        }
+                verbose);
     }
 
     /**
@@ -83,23 +52,22 @@ public class LogicAppsMigrationExecutor {
      * @param projectRootDir          the root directory of the project.
      */
     public static void migrateLogicAppToBallerina(Path logicAppFilePath, String additionalInstructions,
-                                                  Path projectRootDir) {
+                                                  Path projectRootDir, boolean verbose) {
         try {
             String copilotAccessToken = getAccessToken();
             if (copilotAccessToken == null) {
                 return;
             }
 
-            String projectName = logicAppFilePath.getFileName().toString().replace(".json", "");
-            Path projectPath = projectRootDir.resolve(projectName);
-            String packageName = URLEncoder.encode(projectName, StandardCharsets.UTF_8).replace("-", "_");
+            String packageName = URLEncoder.encode(projectRootDir.getFileName().toString(),
+                    StandardCharsets.UTF_8).replace("-", "_");
             ModuleDescriptor moduleDescriptor = getModuleDescriptor(packageName);
 
             JsonArray generatedSourceFiles = CodeGenerationUtils.generateCodeForLogicApp(copilotAccessToken,
-                    logicAppFilePath, projectPath, packageName, additionalInstructions, moduleDescriptor);
+                    logicAppFilePath, packageName, additionalInstructions, moduleDescriptor, verbose);
 
             if (!generatedSourceFiles.isEmpty()) {
-                createProjectFromGeneratedSource(generatedSourceFiles, moduleDescriptor, projectPath);
+                createProjectFromGeneratedSource(generatedSourceFiles, moduleDescriptor, projectRootDir);
             }
 
         } catch (IOException e) {
@@ -113,7 +81,8 @@ public class LogicAppsMigrationExecutor {
      * @param logicAppFilePath        the path to the Logic App JSON file.
      * @param additionalInstructions  additional instructions for the migration process.
      */
-    public static void migrateLogicAppToBallerina(Path logicAppFilePath, String additionalInstructions) {
+    public static void migrateLogicAppToBallerina(Path logicAppFilePath, String additionalInstructions,
+                                                  boolean verbose) {
         try {
             String copilotAccessToken = getAccessToken();
             if (copilotAccessToken == null) {
@@ -126,7 +95,7 @@ public class LogicAppsMigrationExecutor {
             ModuleDescriptor moduleDescriptor = getModuleDescriptor(projectName);
 
             JsonArray generatedSourceFiles = CodeGenerationUtils.generateCodeForLogicApp(copilotAccessToken,
-                    logicAppFilePath, projectPath, packageName, additionalInstructions, moduleDescriptor);
+                    logicAppFilePath, packageName, additionalInstructions, moduleDescriptor, verbose);
 
             if (!generatedSourceFiles.isEmpty()) {
                 createProjectFromGeneratedSource(generatedSourceFiles, moduleDescriptor, projectPath);
@@ -210,5 +179,7 @@ public class LogicAppsMigrationExecutor {
                     moduleDescriptor.packageName().value(),
                     moduleDescriptor.version().value()));
         }
+
+        outStream.println("Ballerina project created successfully at: " + projectDir.toAbsolutePath());
     }
 }

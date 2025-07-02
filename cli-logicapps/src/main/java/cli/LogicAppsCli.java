@@ -33,6 +33,6 @@ public class LogicAppsCli {
             System.exit(1);
         }
 
-        LogicAppsMigrationExecutor.migrateLogicAppToBallerina(Path.of(args[0]), "", Path.of(args[1]));
+//        LogicAppsMigrationExecutor.migrateLogicAppToBallerina(Path.of(args[0]), "", Path.of(args[1]));
     }
 }

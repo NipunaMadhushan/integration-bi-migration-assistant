@@ -16,17 +16,16 @@ def libJarPath = "../../../../build/libs/logicapps-migration-assistant-${project
 
 dependencies {
     // Dev dependencies
-    implementation group: 'info.picocli', name: 'picocli', version: "${picocliVersion}"
-    implementation group: 'org.jetbrains', name: 'annotations', version: "${jetbrainsAnnotationsVersion}"
-    testImplementation group: 'org.testng', name: 'testng', version: "${testngVersion}"
-    spotbugs group: 'com.github.spotbugs', name: 'spotbugs', version: "${spotbugsVersion}"
+    implementation "info.picocli:picocli:${picocliVersion}"
+    implementation "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+    testImplementation "org.testng:testng:${testngVersion}"
+    spotbugs "com.github.spotbugs:spotbugs:${spotbugsVersion}"
 
     // LogicApps specific dependencies
     implementation "com.google.code.gson:gson:${gsonVersion}"
     implementation "org.ballerinalang:ballerina-lang:${ballerinaLangVersion}"
     implementation "org.ballerinalang:ballerina-tools-api:${ballerinaLangVersion}"
     implementation "org.ballerinalang:ballerina-cli:${ballerinaLangVersion}"
-    implementation "org.ballerinalang:toml-parser:${ballerinaLangVersion}"
 }
 
 checkstyle {
