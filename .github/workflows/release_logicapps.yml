@@ -43,24 +43,24 @@ jobs:
           packagePAT: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew build -x test
 
-      - name: Ballerina Central Dev Push
-        if: ${{ inputs.environment == 'DEV CENTRAL' }}
-        env:
-          BALLERINA_DEV_CENTRAL: true
-          BALLERINA_STAGE_CENTRAL: false
-          BALLERINA_CENTRAL_ACCESS_TOKEN: ${{ secrets.BALLERINA_CENTRAL_ACCESS_TOKEN }}
-          packageUser: ${{ secrets.BALLERINA_BOT_USERNAME }}
-          packagePAT: ${{ secrets.BALLERINA_BOT_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.BALLERINA_BOT_TOKEN }}
-        run: |
-          ./gradlew clean logicAppsRelease
-
-      - name: Ballerina Central Push
-        if: ${{ inputs.environment == 'PROD CENTRAL' }}
-        env:
-          BALLERINA_CENTRAL_ACCESS_TOKEN: ${{ secrets.BALLERINA_CENTRAL_ACCESS_TOKEN }}
-          packageUser: ${{ secrets.BALLERINA_BOT_USERNAME }}
-          packagePAT: ${{ secrets.BALLERINA_BOT_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.BALLERINA_BOT_TOKEN }}
-        run: |
-          ./gradlew clean logicAppsRelease
+#      - name: Ballerina Central Dev Push
+#        if: ${{ inputs.environment == 'DEV CENTRAL' }}
+#        env:
+#          BALLERINA_DEV_CENTRAL: true
+#          BALLERINA_STAGE_CENTRAL: false
+#          BALLERINA_CENTRAL_ACCESS_TOKEN: ${{ secrets.BALLERINA_CENTRAL_ACCESS_TOKEN }}
+#          packageUser: ${{ secrets.BALLERINA_BOT_USERNAME }}
+#          packagePAT: ${{ secrets.BALLERINA_BOT_TOKEN }}
+#          GITHUB_TOKEN: ${{ secrets.BALLERINA_BOT_TOKEN }}
+#        run: |
+#          ./gradlew clean logicAppsRelease
+#
+#      - name: Ballerina Central Push
+#        if: ${{ inputs.environment == 'PROD CENTRAL' }}
+#        env:
+#          BALLERINA_CENTRAL_ACCESS_TOKEN: ${{ secrets.BALLERINA_CENTRAL_ACCESS_TOKEN }}
+#          packageUser: ${{ secrets.BALLERINA_BOT_USERNAME }}
+#          packagePAT: ${{ secrets.BALLERINA_BOT_TOKEN }}
+#          GITHUB_TOKEN: ${{ secrets.BALLERINA_BOT_TOKEN }}
+#        run: |
+#          ./gradlew clean logicAppsRelease
