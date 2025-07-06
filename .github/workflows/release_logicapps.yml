@@ -36,6 +36,11 @@ jobs:
       - name: Update logicAppsVersion
         run: sed -i 's/^logicAppsVersion=\(.*\)-SNAPSHOT$/logicAppsVersion=\1/' gradle.properties
 
+      - name: Get LogicApps Version
+        run: |
+          VERSION=$(grep "logicAppsVersion=" gradle.properties | cut -d'=' -f2)
+          echo "LogicApps Version: $VERSION"
+
       - name: Build with Gradle
         env:
           packageUser: ${{ github.actor }}
